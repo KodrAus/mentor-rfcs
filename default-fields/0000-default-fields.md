@@ -7,50 +7,36 @@
 [summary]: #summary
 
 Allow struct definitions to supply default values for individual fields,
-and then allow those fields to be omitted from construction:
+and then allow those fields to be omitted from initialisation:
 
 ```rust
 struct Foo {
     a: &'static str,
     b: bool = true,
-    c: i32
+    c: i32,
 }
 
 let foo = Foo {
     a: "Hello",
-    c: 42
+    c: 42,
 }
 ```
 
 # Motivation
 [motivation]: #motivation
 
-Today, Rust allows you to create an instance of a struct using a literal syntax:
+Today, Rust allows you to create an instance of a struct using a literal syntax.
+This requires all fields in the struct be assigned a value, and can't be used
+with private fields.
 
-```rust
-struct Foo {
-    a: &'static str,
-    b: bool,
-    c: i32
-}
-
-let foo = Foo {
-    a: "Hello",
-    b: true,
-    c: 42
-};
-```
-
-This requires all fields in the struct be assigned a value, unless the struct implements
-the Default trait.
-In this case, values can be optionally provided, and rest assigned their default value:
+With the `..` syntax, values for missing fields can be taken from the struct:
 
 ```rust
 #[derive(Default)]
 struct Foo {
     a: &'static str,
     b: bool,
-    c: i32
+    c: i32,
 }
 
 let foo = Foo {
@@ -60,33 +46,16 @@ let foo = Foo {
 }
 ```
 
-The problem with this is that it requires Foo to derive Default, which may not always
-be desirable.
-
-The existing struct construction also can't be used when a struct has private fields:
-
-```rust
-mod data {
-    pub struct Foo {
-        pub a: &'static str,
-        b: bool,
-        pub c: i32
-    }
-}
-
-// Error: field `b` is private
-let foo = data::Foo {
-    a: "Hello",
-    b: true,
-    c: 42
-}
-```
+However, this still requires an initialised struct after the `..`.
 
 To work around these shortcomings, users can create constructor functions or more elaborate builders.
-The problem with a constructor is that it needs to be kept in sync with the fields of the struct, or
-require the user reassign values they want to change.
-Builders enable more advanced construction, but also need to kept in-line with the struct they build,
+The problem with a constructor is that you need one for each combination of fields a caller can supply.
+Builders enable more advanced initialisation, but also need to kept in-line with the struct they build,
 and can be overkill for large, but uncomplicated structs.
+This is especially true 
+
+# Detailed design
+[design]: #detailed-design
 
 With field defaults a caller can instantiate a struct without needing builders
 or a constructor function:
@@ -95,12 +64,12 @@ or a constructor function:
 struct Foo {
     a: &'static str,
     b: bool = true,
-    c: i32
+    c: i32,
 }
 
 let foo = Foo {
     a: "Hello",
-    c: 42
+    c: 42,
 }
 ```
 
@@ -111,13 +80,13 @@ Say we have the following API and consumer:
 mod data {
     pub struct Foo {
         pub a: &'static str,
-        pub c: i32
+        pub c: i32,
     }
 }
 
 let foo = data::Foo {
     a: "Hello",
-    c: 42
+    c: 42,
 }
 ```
 
@@ -128,14 +97,14 @@ doesn't need to change:
 mod data {
     pub struct Foo {
         pub a: &'static str,
-        pub b: bool = true
-        pub c: i32
+        pub b: bool = true,
+        pub c: i32,
     }
 }
 
 let foo = data::Foo {
     a: "Hello",
-    c: 42
+    c: 42,
 }
 ```
 
@@ -146,11 +115,8 @@ its addition can't be treated as a non-breaking change.
 
 The goal of this syntax is to let users build a struct as if it default fields weren't there.
 
-# Detailed design
-[design]: #detailed-design
-
-The semantics of field defaults are the same as consts.
-The type must be supplied, and the value must be a valid compile-time constant.
+Field defaults are modeled on `const`s.
+So the type must be supplied, and the value must be a compile-time expression.
 
 Field defaults take precedence over `Default::default()`.
 
@@ -158,8 +124,8 @@ Field defaults take precedence over `Default::default()`.
 #[derive(Default)]
 struct Foo {
     a: &'static str,
-    b: bool = true
-    c: i32
+    b: bool = true,
+    c: i32,
 }
 
 // `b` is `true`, even though `bool::default()` is `false`
@@ -170,12 +136,12 @@ The `#[derive(Default)]` above is functionally equivalent to:
 
 ```rust
 impl Default for Foo {
-	fn default() -> Self {
-		Foo {
-			a: <&'static str>::default(),
-			c: i32::default()
-		}
-	}
+    fn default() -> Self {
+        Foo {
+            a: <&'static str>::default(),
+            c: i32::default(),
+        }
+    }
 }
 ```
 
@@ -184,15 +150,15 @@ Supplied field values take precedence over field defaults:
 ```rust
 struct Foo {
     a: &'static str,
-    b: bool = true
-    c: i32
+    b: bool = true,
+    c: i32,
 }
 
 // `b` is `false`, even though the field default is `true`
 let foo = Foo {
     a: "Hello",
     b: false,
-    c: i32
+    c: i32,
 };
 ```
 
@@ -202,18 +168,18 @@ given different values, then those values take precedence:
 ```rust
 struct Foo {
     a: &'static str,
-    b: bool = true
-    c: i32
+    b: bool = true,
+    c: i32,
 }
 
 impl Default for Foo {
-	fn default() -> Self {
-		Foo {
-			a: "Hello",
-			b: false,
-			c: 42
-		}
-	}
+    fn default() -> Self {
+        Foo {
+            a: "Hello",
+            b: false,
+            c: 42,
+        }
+    }
 }
 
 // `b` is `false`, even though the field default is `true`
@@ -252,8 +218,8 @@ An interesting case is where all fields are given default values:
 ```rust
 struct Foo {
     a: &'static str = "",
-    b = true
-    c: i32 = 42
+    b: bool = true,
+    c: i32 = 42,
 }
 ```
 
