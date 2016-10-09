@@ -139,15 +139,17 @@ Why should we *not* do this?
 
 ## Allow arbitrary expressions instead of const
 
-There's an expectation that field defaults will be cheap.
-This is especially important for private fields that a caller can't override.
-
-Allowing arbitrary expressions would make this feature more powerful, but at the expense of allowing
-functionality to leak into the struct's data.
+Allowing arbitrary expressions as defaults would make this feature more powerful, 
+but at the expense of allowing functionality to leak into the struct's data.
 
 ## Use explicit syntax for defaults
 
-Additional fields can be added to a struct in a non-breaking fashion.
+Field defaults could require callers to use an opt-in syntax like `..`.
+This would make it clearer to callers that additional code could be run on struct initialisation.
+However it would prevent field default from being used to maintain backwards compatibility,
+and reduce overall ergonomics.
+
+With no special syntax, additional fields can be added to a struct in a non-breaking fashion.
 Say we have the following API and consumer:
 
 ```rust
@@ -182,12 +184,10 @@ let foo = data::Foo {
 }
 ```
 
-This is the key use-case for avoiding special opt-in syntax like `..` to utilise
-default fields.
 If it's unclear whether or not a particular caller will use a default field value then
 its addition can't be treated as a non-breaking change.
 
-The goal of this syntax is to let users build a struct as if it default fields weren't there.
+The goal of this design is to let users build a struct as if it default fields weren't there.
 
 # Unresolved questions
 [unresolved]: #unresolved-questions
