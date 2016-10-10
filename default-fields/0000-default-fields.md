@@ -76,19 +76,29 @@ let foo = Foo {
 Supplied field values take precedence over field defaults:
 
 ```rust
-struct Foo {
-    a: &'static str,
-    b: bool = true,
-    c: i32,
-}
-
 // `b` is `false`, even though the field default is `true`
 let foo = Foo {
     a: "Hello",
     b: false,
-    c: i32,
+    c: 42,
 };
 ```
+
+Supplied field values in functional updates take precedence over field defaults:
+
+```rust
+// `b` is `false`, even though the field default is `true`
+let foo = Foo {
+    a: "Hello",
+    c: 0,
+    ..Foo {
+        b: false
+    }
+};
+```
+
+The field default should only be used when the caller doesn't supply a value,
+to avoid unnecessarily assigning values.
 
 When deriving `Default`, field defaults are used instead of the type default.
 
@@ -104,48 +114,45 @@ struct Foo {
 let foo = Foo::default();
 ```
 
-The `#[derive(Default)]` above is functionally equivalent to:
-
-```rust
-impl Default for Foo {
-    fn default() -> Self {
-        Foo {
-            a: <&'static str>::default(),
-            c: i32::default(),
-        }
-    }
-}
-```
-
-The field default should only be used when the caller doesn't supply a value,
-to avoid unnecessarily assigning values.
-
 ## Allowable Values
 
-Field defaults are modelled on `const`s.
+Field defaults use the same syntax as `const`s.
 So the type must be supplied, and the value must be a compile-time expression, or a call to `Default::default()`.
-This is to ensure default values have an expectation of being cheap.
-It also supports default values for collection types like `Vec`.
+Default field values are expected to be cheap to produce and have basic support for collection types like `Vec`.
 
 # Drawbacks
 [drawbacks]: #drawbacks
 
-Why should we *not* do this?
+Field defaults are limited to constant expressions and calls to `default()`.
+This means there are values that can't be used as defaults, such as a `Vec` with 3 elements.
+
+Allowing functionality to be injected into data initialisation through abuse of `Default` means struct literal initialisation 
+is no longer guaranteed to be pure.
 
 # Alternatives
 [alternatives]: #alternatives
 
-## Stick with builders and constructor functions
-
-## Allow arbitrary expressions instead of const
+## Allow arbitrary expressions instead of constants
 
 Allowing arbitrary expressions as defaults would make this feature more powerful, 
 but at the expense of allowing functionality to leak into the struct's data.
 
-## Use explicit syntax for defaults
+Limiting valid field defaults to constants and defaults keeps confidence that the cost of initialising a struct
+will be low.
+The same isn't true when arbitrary expressions that could reasonably panic or block on io are allowed.
+
+It could be argued that supporting `Default` is an artificial constraint that doesn't prevent arbitrary expressions.
+The difference is that `Default` has an expectation of being cheap, so using it to inject logic into field
+initialisation is an obvious code smell.
+
+Ultimately, the combination of constants and `Default` strikes the best balance between expressiveness of allowable
+field default values and constraints on their cost.
+
+## Explicit syntax for opting into field defaults
 
 Field defaults could require callers to use an opt-in syntax like `..`.
-This would make it clearer to callers that additional code could be run on struct initialisation.
+This would make it clearer to callers that additional code could be run on struct initialisation,
+weakening arguments against more powerful default expressions.
 However it would prevent field default from being used to maintain backwards compatibility,
 and reduce overall ergonomics.
 
@@ -187,7 +194,7 @@ let foo = data::Foo {
 If it's unclear whether or not a particular caller will use a default field value then
 its addition can't be treated as a non-breaking change.
 
-The goal of this design is to let users build a struct as if it default fields weren't there.
+The goal of this design is to let users build a struct as if its default fields weren't there.
 
 # Unresolved questions
 [unresolved]: #unresolved-questions
