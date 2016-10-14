@@ -73,6 +73,8 @@ let foo = Foo {
 }
 ```
 
+Field defaults are sugar for the 'real' initialiser, where values for missing fields are added with the supplied default expression.
+
 Supplied field values take precedence over field defaults:
 
 ```rust
@@ -123,7 +125,7 @@ Default field values are expected to be cheap to produce and have basic support 
 # Drawbacks
 [drawbacks]: #drawbacks
 
-Field defaults are limited to constant expressions and calls to `default()`.
+Field defaults are limited to `const` expressions and calls to `default()`.
 This means there are values that can't be used as defaults, such as a `Vec` with 3 elements.
 
 Allowing functionality to be injected into data initialisation through abuse of `Default` means struct literal initialisation 
@@ -137,7 +139,7 @@ is no longer guaranteed to be pure.
 Allowing arbitrary expressions as defaults would make this feature more powerful, 
 but at the expense of allowing functionality to leak into the struct's data.
 
-Limiting valid field defaults to constants and defaults keeps confidence that the cost of initialising a struct
+Limiting valid field defaults to `const`s and defaults keeps confidence that the cost of initialising a struct
 will be low.
 The same isn't true when arbitrary expressions that could reasonably panic or block on io are allowed.
 
@@ -145,8 +147,12 @@ It could be argued that supporting `Default` is an artificial constraint that do
 The difference is that `Default` has an expectation of being cheap, so using it to inject logic into field
 initialisation is an obvious code smell.
 
-Ultimately, the combination of constants and `Default` strikes the best balance between expressiveness of allowable
+Ultimately, the combination of `const`s and `Default` strikes the best balance between expressiveness of allowable
 field default values and constraints on their cost.
+When using `const` values, there is no runtime overhead for default fields.
+When using `Default`, the expected overhead is small.
+
+For complex initialisation logic, builders are the preferred option because they don't need to carry this same expectation.
 
 ## Explicit syntax for opting into field defaults
 
