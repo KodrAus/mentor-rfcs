@@ -14,6 +14,7 @@ struct Foo {
     a: &'static str,
     b: bool = true,
     c: i32,
+    d: Vec<i32> = Vec::default()
 }
 
 let foo = Foo {
@@ -28,10 +29,10 @@ let foo = Foo {
 Today, Rust allows you to create an instance of a struct using a literal syntax.
 This requires all fields in the struct be assigned a value, and can't be used
 with private fields.
-It can also be inconvenient for large structs that usually receive the same values.
+It can also be inconvenient for large structs whose fields usually receive the same values.
 
 With the `..` syntax, values for missing fields can be taken from another struct.
-This is convenient for using `Default` to override just a few values on initialisation:
+For example, using `Default` to override just a few values on initialisation:
 
 ```rust
 #[derive(Default)]
@@ -39,6 +40,7 @@ struct Foo {
     a: &'static str,
     b: bool,
     c: i32,
+    d: Vec<i32>
 }
 
 let foo = Foo {
@@ -49,9 +51,11 @@ let foo = Foo {
 ```
 
 However, this still requires an already initialised struct after the `..`.
+It also isn't valid if the struct has private fields.
 
 To work around these shortcomings, users can create constructor functions or more elaborate builders.
-The problem with a constructor is that you need one for each combination of fields a caller can supply.
+The problem with a constructor is that you either need one for each combination of fields a caller can supply
+or expect callers to override values after initialisation, which is inefficient.
 Builders enable more advanced initialisation, but need additional boilerplate.
 
 # Detailed design
@@ -65,6 +69,7 @@ struct Foo {
     a: &'static str,
     b: bool = true,
     c: i32,
+    d: Vec<i32> = Vec::default()
 }
 
 let foo = Foo {
