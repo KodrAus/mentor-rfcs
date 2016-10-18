@@ -6,8 +6,7 @@
 # Summary
 [summary]: #summary
 
-Allow struct definitions to supply default values for individual fields,
-and then allow those fields to be omitted from struct initialisation:
+Allow struct definitions to supply default values for individual fields, and then allow those fields to be omitted from struct initialisation:
 
 ```rust
 struct Foo {
@@ -26,13 +25,9 @@ let foo = Foo {
 # Motivation
 [motivation]: #motivation
 
-Today, Rust allows you to create an instance of a struct using a literal syntax.
-This requires all fields in the struct be assigned a value, and can't be used
-with private fields.
-It can also be inconvenient for large structs whose fields usually receive the same values.
+Today, Rust allows you to create an instance of a struct using a literal syntax. This requires all fields in the struct be assigned a value, and can't be used with private fields. It can also be inconvenient for large structs whose fields usually receive the same values.
 
-With the `..` syntax, values for missing fields can be taken from another struct.
-For example, using `Default` to override just a few values on initialisation:
+With the `..` syntax, values for missing fields can be taken from another struct. For example, using `Default` to override just a few values on initialisation:
 
 ```rust
 #[derive(Default)]
@@ -50,19 +45,14 @@ let foo = Foo {
 }
 ```
 
-However, this still requires an already initialised struct after the `..`.
-It also isn't valid if the struct has private fields.
+However, this still requires an already initialised struct after the `..`. It also isn't valid if the struct has private fields.
 
-To work around these shortcomings, users can create constructor functions or more elaborate builders.
-The problem with a constructor is that you either need one for each combination of fields a caller can supply
-or expect callers to override values after initialisation, which is inefficient.
-Builders enable more advanced initialisation, but need additional boilerplate.
+To work around these shortcomings, users can create constructor functions or more elaborate builders. The problem with a constructor is that you either need one for each combination of fields a caller can supply or expect callers to override values after initialisation, which is inefficient. Builders enable more advanced initialisation, but need additional boilerplate.
 
 # Detailed design
 [design]: #detailed-design
 
-With field defaults a caller can initialise a struct with default values without needing builders
-or a constructor function:
+With field defaults a caller can initialise a struct with default values without needing builders or a constructor function:
 
 ```rust
 struct Foo {
@@ -104,8 +94,7 @@ let foo = Foo {
 };
 ```
 
-The field default should only be used when the caller doesn't supply a value,
-to avoid unnecessarily assigning values.
+The field default should only be used when the caller doesn't supply a value, to avoid unnecessarily assigning values.
 
 When deriving `Default`, field defaults are used instead of the type default.
 
@@ -123,52 +112,35 @@ let foo = Foo::default();
 
 ## Allowable Values
 
-Field defaults use the same syntax as `const`s.
-So the type must be supplied, and the value must be a compile-time expression, or a call to `Default::default()`.
-Default field values are expected to be cheap to produce and have basic support for collection types like `Vec`.
+Field defaults use the same syntax as `const`s. So the type must be supplied, and the value must be a compile-time expression, or a call to `Default::default()`. Default field values are expected to be cheap to produce and have basic support for collection types like `Vec`.
 
 # Drawbacks
 [drawbacks]: #drawbacks
 
-Field defaults are limited to `const` expressions and calls to `default()`.
-This means there are values that can't be used as defaults, such as a `Vec` with 3 elements.
+Field defaults are limited to `const` expressions and calls to `default()`. This means there are values that can't be used as defaults, such as a `Vec` with 3 elements.
 
-Allowing functionality to be injected into data initialisation through abuse of `Default` means struct literal initialisation 
-is no longer guaranteed to be pure.
+Allowing functionality to be injected into data initialisation through abuse of `Default` means struct literal initialisation is no longer guaranteed to be pure.
 
 # Alternatives
 [alternatives]: #alternatives
 
 ## Allow arbitrary expressions instead of constants
 
-Allowing arbitrary expressions as defaults would make this feature more powerful, 
-but at the expense of allowing functionality to leak into the struct's data.
+Allowing arbitrary expressions as defaults would make this feature more powerful, but at the expense of allowing functionality to leak into the struct's data.
 
-Limiting valid field defaults to `const`s and defaults keeps confidence that the cost of initialising a struct
-will be low.
-The same isn't true when arbitrary expressions that could reasonably panic or block on io are allowed.
+Limiting valid field defaults to `const`s and defaults keeps confidence that the cost of initialising a struct will be low. The same isn't true when arbitrary expressions that could reasonably panic or block on io are allowed.
 
-It could be argued that supporting `Default` is an artificial constraint that doesn't prevent arbitrary expressions.
-The difference is that `Default` has an expectation of being cheap, so using it to inject logic into field
-initialisation is an obvious code smell.
+It could be argued that supporting `Default` is an artificial constraint that doesn't prevent arbitrary expressions. The difference is that `Default` has an expectation of being cheap, so using it to inject logic into field initialisation is an obvious code smell.
 
-Ultimately, the combination of `const`s and `Default` strikes the best balance between expressiveness of allowable
-field default values and constraints on their cost.
-When using `const` values, there is no runtime overhead for default fields.
-When using `Default`, the expected overhead is small.
+Ultimately, the combination of `const`s and `Default` strikes the best balance between expressiveness of allowable field default values and constraints on their cost. When using `const` values, there is no runtime overhead for default fields. When using `Default`, the expected overhead is small.
 
 For complex initialisation logic, builders are the preferred option because they don't need to carry this same expectation.
 
 ## Explicit syntax for opting into field defaults
 
-Field defaults could require callers to use an opt-in syntax like `..`.
-This would make it clearer to callers that additional code could be run on struct initialisation,
-weakening arguments against more powerful default expressions.
-However it would prevent field default from being used to maintain backwards compatibility,
-and reduce overall ergonomics.
+Field defaults could require callers to use an opt-in syntax like `..`. This would make it clearer to callers that additional code could be run on struct initialisation, weakening arguments against more powerful default expressions. However it would prevent field default from being used to maintain backwards compatibility, and reduce overall ergonomics.
 
-With no special syntax, additional fields can be added to a struct in a non-breaking fashion.
-Say we have the following API and consumer:
+With no special syntax, additional fields can be added to a struct in a non-breaking fashion. Say we have the following API and consumer:
 
 ```rust
 mod data {
@@ -184,8 +156,7 @@ let foo = data::Foo {
 }
 ```
 
-We can add a new field b to this struct with a default value, and the calling code
-doesn't need to change:
+We can add a new field b to this struct with a default value, and the calling code doesn't need to change:
 
 ```rust
 mod data {
@@ -202,8 +173,7 @@ let foo = data::Foo {
 }
 ```
 
-If it's unclear whether or not a particular caller will use a default field value then
-its addition can't be treated as a non-breaking change.
+If it's unclear whether or not a particular caller will use a default field value then its addition can't be treated as a non-breaking change.
 
 The goal of this design is to let users build a struct as if its default fields weren't there.
 
