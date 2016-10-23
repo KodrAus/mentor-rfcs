@@ -24,7 +24,7 @@ let foo = Foo {
 # Motivation
 [motivation]: #motivation
 
-Field default address two issues with structure initialisation in Rust: privacy and boilerplate. This is achieved by letting callers omit fields from initialisation when a default is specified for that field. This syntax also allows allows fields to be added to structures in a backwards compatible way, by providing defaults for new fields.
+Field defaults address two issues with structure initialisation in Rust: privacy and boilerplate. This is achieved by letting callers omit fields from initialisation when a default is specified for that field. This syntax also allows allows fields to be added to structures in a backwards compatible way, by providing defaults for new fields.
 
 Rust allows you to create an instance of a structure using a literal syntax. This requires all fields in the structure be assigned a value, and can't be used with private fields. It can also be inconvenient for large structures whose fields usually receive the same values.
 
@@ -32,7 +32,7 @@ With the `..` syntax, values for missing fields can be taken from another struct
 
 To work around these shortcomings, users can create constructor functions or more elaborate builders. The problem with a constructor is that you need one for each combination of fields a caller can supply. Builders enable more advanced initialisation, but need additional boilerplate.
 
-Field defaults allow a caller to initialise a struct with default values without needing builders or a constructor function:
+Field defaults allow a caller to initialise a structure with default values without needing builders or a constructor function:
 
 ```rust
 struct Foo {
@@ -59,8 +59,7 @@ struct_field : ident ':' type_path |
                ident ':' type_path '=' expr
 ```
 
-The syntax is modeled after `const` expressions.
-Field defaults are only valid for classic C structures:
+The syntax is modeled after `const` expressions. Field defaults are only valid for classic C structures:
 
 ```
 structure : 'struct' ident '{' struct_field
@@ -70,7 +69,48 @@ structure : 'struct' ident '{' struct_field
 
 ## Interpretation
 
-Field defaults are sugar for the 'real' initialiser, where values for missing fields are added with the supplied default expression. The value of a field default must be a compile-time expression. So any expression that's valid as `const` can be used as a field default. This ensures values that aren't specified by the caller are deterministic and cheap to produce.
+The value of a field default must be a compile-time expression. So any expression that's valid as `const` can be used as a field default. This ensures values that aren't specified by the caller are deterministic and cheap to produce.
+
+Valid:
+
+```rust
+struct Foo {
+    a: &'static str,
+    b: bool = true,
+    c: i32,
+}
+```
+
+Invalid:
+
+```rust
+struct Foo {
+    a: &'static str,
+    b: Vec<bool> = Vec::new(),
+                   ^^^^^^^^^^
+                   calls in field defaults are limited to struct and enum constructors
+    c: i32,
+}
+```
+
+Field defaults are sugar for the 'real' initialiser, where values for missing fields are added with the supplied default expression. 
+
+```rust
+let foo = Foo {
+    a: "Hello",
+    c: 42,
+}
+```
+
+Is equivalent to:
+
+```rust
+let foo = Foo {
+    a: "Hello",
+    b: true,
+    c: 42,
+}
+```
 
 ## Order of Precedence
 
