@@ -59,7 +59,7 @@ struct_field : ident ':' type_path |
                ident ':' type_path '=' expr
 ```
 
-The syntax is modelled after `const` expressions.
+The syntax is modeled after `const` expressions.
 Field defaults are only valid for classic C structures:
 
 ```
