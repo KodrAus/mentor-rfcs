@@ -18,7 +18,7 @@ struct Foo {
 let foo = Foo {
     a: "Hello",
     c: 42,
-}
+};
 ```
 
 # Motivation
@@ -44,7 +44,7 @@ struct Foo {
 let foo = Foo {
     a: "Hello",
     c: 42,
-}
+};
 ```
 
 # Detailed design
@@ -88,7 +88,7 @@ struct Foo {
     a: &'static str,
     b: Vec<bool> = Vec::new(),
                    ^^^^^^^^^^
-                   calls in field defaults are limited to struct and enum constructors
+                   // error: calls in field defaults are limited to struct and enum constructors
     c: i32,
 }
 ```
@@ -99,7 +99,7 @@ Field defaults are sugar for the 'real' initialiser, where values for missing fi
 let foo = Foo {
     a: "Hello",
     c: 42,
-}
+};
 ```
 
 Is equivalent to:
@@ -109,8 +109,10 @@ let foo = Foo {
     a: "Hello",
     b: true,
     c: 42,
-}
+};
 ```
+
+When a field isn't supplied, and there is no default available, then the standard _missing field_ error applies.
 
 ## Order of Precedence
 
@@ -142,7 +144,9 @@ let foo = Foo {
 
 The field default should only be used when the caller doesn't supply a value, to avoid unnecessarily assigning values.
 
-When deriving `Default`, field defaults are used instead of the type default.
+## Deriving Default
+
+When deriving `Default`, supplied field defaults are used instead of the type default. This is a feature of `#[derive(Default)]`.
 
 ```rust
 #[derive(Default)]
@@ -182,6 +186,23 @@ mod data {
         pub a: &'static str,
         pub b: bool = true,
         pub c: i32,
+    }
+}
+
+let foo = data::Foo {
+    a: "Hello",
+    c: 42,
+}
+```
+
+By using field defaults, callers can use structure literals without having to know about any private fields:
+
+```rust
+mod data {
+    pub struct Foo {
+        pub a: &'static str,
+        pub c: i32,
+        private_field: bool = true
     }
 }
 
