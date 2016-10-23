@@ -24,6 +24,8 @@ let foo = Foo {
 # Motivation
 [motivation]: #motivation
 
+Field default address two issues with structure initialisation in Rust: privacy and boilerplate. This is achieved by letting callers omit fields from initialisation when a default is specified for that field. This syntax also allows structures to be updated in a non-breaking fashion, by providing defaults for new fields.
+
 Rust allows you to create an instance of a structure using a literal syntax. This requires all fields in the structure be assigned a value, and can't be used with private fields. It can also be inconvenient for large structures whose fields usually receive the same values.
 
 With the `..` syntax, values for missing fields can be taken from another structure. However, this still requires an already initialised struct after the `..`. It also isn't valid if the struct has innaccessible private fields.
@@ -45,8 +47,6 @@ let foo = Foo {
 }
 ```
 
-Field defaults aim to improve the ergonomics of structure literals. This is achieved by letting callers omit fields from initialisation when a default is specified for that field. This syntax also allows structures to be updated in a non-breaking fashion, by providing defaults for new fields.
-
 # Detailed design
 [design]: #detailed-design
 
@@ -63,12 +63,9 @@ The syntax is modelled after `const` expressions.
 Field defaults are only valid for classic C structures:
 
 ```
-struct_expr : expr_path '{' struct_field
-                      [ ',' struct_field ] *
-                      [ ".." expr ] '}' |
-              expr_path '(' expr
-                      [ ',' expr ] * ')' |
-              expr_path ;
+structure : 'struct' ident '{' struct_field
+                               [ ',' struct_field ] *
+                           '}' ;
 ```
 
 ## Interpretation
