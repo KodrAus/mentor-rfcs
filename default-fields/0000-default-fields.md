@@ -24,13 +24,13 @@ let foo = Foo {
 # Motivation
 [motivation]: #motivation
 
-Field default address two issues with structure initialisation in Rust: privacy and boilerplate. This is achieved by letting callers omit fields from initialisation when a default is specified for that field. This syntax also allows structures to be updated in a non-breaking fashion, by providing defaults for new fields.
+Field default address two issues with structure initialisation in Rust: privacy and boilerplate. This is achieved by letting callers omit fields from initialisation when a default is specified for that field. This syntax also allows allows fields to be added to structures in a backwards compatible way, by providing defaults for new fields.
 
 Rust allows you to create an instance of a structure using a literal syntax. This requires all fields in the structure be assigned a value, and can't be used with private fields. It can also be inconvenient for large structures whose fields usually receive the same values.
 
 With the `..` syntax, values for missing fields can be taken from another structure. However, this still requires an already initialised struct after the `..`. It also isn't valid if the struct has innaccessible private fields.
 
-To work around these shortcomings, users can create constructor functions or more elaborate builders. The problem with a constructor is that you either need one for each combination of fields a caller can supply. Builders enable more advanced initialisation, but need additional boilerplate.
+To work around these shortcomings, users can create constructor functions or more elaborate builders. The problem with a constructor is that you need one for each combination of fields a caller can supply. Builders enable more advanced initialisation, but need additional boilerplate.
 
 Field defaults allow a caller to initialise a struct with default values without needing builders or a constructor function:
 
