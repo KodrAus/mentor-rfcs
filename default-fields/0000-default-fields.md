@@ -47,7 +47,6 @@ let foo = Foo {
 
 Field defaults aim to improve the ergonomics of structure literals. This is achieved by letting callers omit fields from initialisation when a default is specified for that field. This syntax also allows structures to be updated in a non-breaking fashion, by providing defaults for new fields.
 
-
 # Detailed design
 [design]: #detailed-design
 
