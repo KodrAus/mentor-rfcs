@@ -6,7 +6,7 @@
 # Summary
 [summary]: #summary
 
-Allow structure definitions to supply default values for individual fields, and then allow those fields to be omitted from struct initialisation:
+Allow structure definitions to supply default values for individual fields, and then allow those fields to be omitted from structure initialisation:
 
 ```rust
 struct Foo {
@@ -24,15 +24,15 @@ let foo = Foo {
 # Motivation
 [motivation]: #motivation
 
-Field defaults address two issues with structure initialisation in Rust: privacy and boilerplate. This is achieved by letting callers omit fields from initialisation when a default is specified for that field. This syntax also allows allows fields to be added to structures in a backwards compatible way, by providing defaults for new fields.
+Structure literal initialisation has two issues: privacy and boilerplate. 
 
-Rust allows you to create an instance of a structure using a literal syntax. This requires all fields in the structure be assigned a value, and can't be used with private fields. It can also be inconvenient for large structures whose fields usually receive the same values.
+Rust allows you to create an instance of a structure using a literal syntax. This requires that all fields in the structure are assigned a value, and can't be used with innaccessible private fields. It can also be inconvenient for large structures whose fields usually receive the same values.
 
-With the `..` syntax, values for missing fields can be taken from another structure. However, this still requires an already initialised struct after the `..`. It also isn't valid if the struct has innaccessible private fields.
+With the functional record updates, values for missing fields can be taken from another structure. However, this still requires an already initialised structure as part of the functional record update. It also isn't valid if the structure has innaccessible private fields.
 
 To work around these shortcomings, users can create constructor functions or more elaborate builders. The problem with a constructor is that you need one for each combination of fields a caller can supply. Builders enable more advanced initialisation, but need additional boilerplate.
 
-Field defaults allow a caller to initialise a structure with default values without needing builders or a constructor function:
+This RFC proposes a solution to improve structure literal ergonomics so they can be used in situations that would normally require a constructor function or builder. This is achieved by letting callers omit fields from initialisation when a default is specified for that field. This syntax also allows allows fields to be added to structures in a backwards compatible way, by providing defaults for new fields. Field defaults allow a caller to initialise a structure with default values without needing builders or a constructor function:
 
 ```rust
 struct Foo {
@@ -52,24 +52,18 @@ let foo = Foo {
 
 ## Grammar
 
-In the initialiser for a structure, a default value expression can be optionally supplied for a field:
+In the definition of a structure, a default value expression can be optionally supplied for a field:
 
 ```
-struct_field : ident ':' type_path |
-               ident ':' type_path '=' expr
+struct_field ::= vis ? ident ':' type_path |
+                 vis ? dent ':' type_path '=' expr
 ```
 
-The syntax is modeled after `const` expressions. Field defaults are only valid for classic C structures:
-
-```
-structure : 'struct' ident '{' struct_field
-                               [ ',' struct_field ] *
-                           '}' ;
-```
+The syntax is modeled after constant expressions. Field defaults are only valid for classic C structures, so tuple structures aren't supported.
 
 ## Interpretation
 
-The value of a field default must be a compile-time expression. So any expression that's valid as `const` can be used as a field default. This ensures values that aren't specified by the caller are deterministic and cheap to produce.
+The value of a field default must be a compile-time expression. So any expression that's valid as constant can be used as a field default. This ensures values that aren't specified by the caller are deterministic and cheap to produce.
 
 Valid:
 
@@ -93,7 +87,9 @@ struct Foo {
 }
 ```
 
-Field defaults are sugar for the 'real' initialiser, where values for missing fields are added with the supplied default expression. 
+The above error is based on `E0015` for trying to initialise a constant with a non-constant expression. As the scope of constant expressions changes this message will change too.
+
+Field defaults are shorthand for the 'real' initialiser, where values for missing fields are added with the supplied default expression. 
 
 ```rust
 let foo = Foo {
@@ -142,8 +138,6 @@ let foo = Foo {
 };
 ```
 
-The field default should only be used when the caller doesn't supply a value, to avoid unnecessarily assigning values.
-
 ## Deriving Default
 
 When deriving `Default`, supplied field defaults are used instead of the type default. This is a feature of `#[derive(Default)]`.
@@ -159,6 +153,8 @@ struct Foo {
 // `b` is `true`, even though `bool::default()` is `false`
 let foo = Foo::default();
 ```
+
+Field defaults allow `#[derive(Default)]` to be used more widely because fields with default values don't need to implement `Default`.
 
 ## Examples
 
@@ -215,14 +211,14 @@ let foo = data::Foo {
 # Drawbacks
 [drawbacks]: #drawbacks
 
-Field defaults are limited to `const` expressions. This means there are values that can't be used as defaults, such any value that requires allocation, including common collections like `Vec`.
+Field defaults are limited to constant expressions. This means there are values that can't be used as defaults, so any value that requires allocation, including common collections like `Vec::new()`.
 
 # Alternatives
 [alternatives]: #alternatives
 
 ## Allow arbitrary expressions instead of just constants
 
-Allowing arbitrary expressions as field defaults would make this feature more powerful. However, limiting field defaults to `const`s maintains the expectation that struct literals are cheap and deterministic. The same isn't true when arbitrary expressions that could reasonably panic or block on io are allowed.
+Allowing arbitrary expressions as field defaults would make this feature more powerful. However, limiting field defaults to constants maintains the expectation that struct literals are cheap and deterministic. The same isn't true when arbitrary expressions that could reasonably panic or block on io are allowed.
 
 For complex initialisation logic, builders are the preferred option because they don't need to carry this same expectation.
 
@@ -263,11 +259,11 @@ This has the effect of simplifying the definition, but also requiring readers to
 
 ## Explicit syntax for opting into field defaults
 
-Field defaults could require callers to use an opt-in syntax like `..`. This would make it clearer to callers that additional code could be run on struct initialisation, weakening arguments against more powerful default expressions. However it would prevent field default from being used to maintain backwards compatibility, and reduce overall ergonomics.
+Field defaults could require callers to use an opt-in syntax like `..`. This would make it clearer to callers that additional code could be run on struct initialisation, weakening arguments against more powerful default expressions. However it would prevent field default from being used to maintain backwards compatibility, and reduce overall ergonomics. If it's unclear whether or not a particular caller will use a default field value then its addition can't be treated as a non-breaking change. 
 
-If it's unclear whether or not a particular caller will use a default field value then its addition can't be treated as a non-breaking change.
+Callers could be forced to opt-in to this feature by adding a private field to a structure that does nothing, meaning the structure couldn't be initialised without using defaults.
 
-The goal of this design is to let users build a struct as if its default fields weren't there.
+The goal of the design proposed in this RFC is to let users build a struct as if its default fields weren't there.
 
 # Unresolved questions
 [unresolved]: #unresolved-questions
