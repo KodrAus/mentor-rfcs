@@ -181,7 +181,7 @@ struct Foo {
 let foo = Foo::default();
 ```
 
-Field defaults allow `#[derive(Default)]` to be used more widely because fields with default values don't implement `Default`.
+Field defaults allow `#[derive(Default)]` to be used more widely because the types of fields with default values don't need to implement `Default`.
 
 ## Examples
 
