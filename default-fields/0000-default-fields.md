@@ -26,7 +26,36 @@ let foo = Foo {
 
 Rust allows you to create an instance of a `struct` using a literal syntax. This requires that all fields in the `struct` are assigned a value, so it can be inconvenient for large `struct`s whose fields usually receive the same values. Literals also can't be used to initialise `struct`s with innaccessible private fields. Functional record updates can reduce noise when a `struct` derives `Default`, but are also invalid when the `struct` has private fields.
 
-To work around these shortcomings, users can create constructor functions or more elaborate builders. The problem with a constructor is that you need one for each combination of fields a caller can supply. Builders enable more advanced initialisation, but need additional boilerplate.
+To work around these shortcomings, users can create constructor functions or more elaborate builders:
+
+```rust
+struct Foo {
+    a: &'static str,
+    b: bool,
+    c: i32
+}
+
+impl Foo {
+    /// Constructor function.
+    fn new(a: &'static str, c: i32) -> Self {
+        Foo {
+            a: a,
+            b: true,
+            c: c
+        }
+    }
+
+    /// Builder method.
+    fn b(mut self, b: bool) -> Self {
+        self.b = b;
+        self
+    }
+}
+
+let foo = Foo::new("Hello", 42).b(false);
+```
+
+The problem with a constructor is that you need one for each combination of fields a caller can supply. Builders enable more advanced initialisation, but need additional boilerplate.
 
 This RFC proposes a solution to improve `struct` literal ergonomics so they can be used for `struct`s with private fields and to reduce initialisation boilerplate for simple scenarios. This is achieved by letting callers omit fields from initialisation when a default is specified for that field. This syntax also allows allows fields to be added to `struct`s in a backwards compatible way, by providing defaults for new fields.
 
