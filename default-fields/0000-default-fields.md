@@ -137,7 +137,7 @@ let foo = Foo {
 
 When a caller doesn't supply a field value during initialisation and there is no default available then the `E0063` missing field error applies.
 
-## Order of Precedence
+## Order of precedence
 
 Supplied field values take precedence over field defaults:
 
@@ -165,7 +165,7 @@ let foo = Foo {
 };
 ```
 
-## Deriving Default
+## Deriving `Default`
 
 When deriving `Default`, supplied field defaults are used instead of the type default. This is a feature of `#[derive(Default)]`.
 
@@ -183,7 +183,7 @@ let foo = Foo::default();
 
 Field defaults allow `#[derive(Default)]` to be used more widely because the types of fields with default values don't need to implement `Default`.
 
-## Examples
+## Enabling backwards compatibility
 
 With no special syntax, additional fields can be added to a struct in a non-breaking fashion. Say we have the following API and consumer:
 
