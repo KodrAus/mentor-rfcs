@@ -83,7 +83,7 @@ In the definition of a `struct`, a default value expression can be optionally su
 
 ```
 struct_field ::= vis ? ident ':' type_path |
-                 vis ? dent ':' type_path '=' expr
+                 vis ? ident ':' type_path '=' expr
 ```
 
 The syntax is modeled after constant expressions. Field defaults are only valid for classic C `struct`s, so tuple `struct`s aren't supported.
