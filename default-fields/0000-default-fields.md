@@ -116,7 +116,7 @@ struct Foo {
 
 The above error is based on `E0015` for trying to initialise a constant with a non-constant expression. As the scope of constant expressions changes this message will change too.
 
-Field defaults are shorthand for the 'real' initialiser, where values for missing fields are added with the supplied default expression. 
+Field defaults are shorthand for the 'real' initialiser, where values for missing fields are added with the supplied default expression:
 
 ```rust
 let foo = Foo {
@@ -125,7 +125,7 @@ let foo = Foo {
 };
 ```
 
-Is equivalent to:
+is equivalent to:
 
 ```rust
 let foo = Foo {
