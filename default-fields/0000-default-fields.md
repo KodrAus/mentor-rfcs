@@ -135,7 +135,7 @@ let foo = Foo {
 };
 ```
 
-When a field isn't supplied, and there is no default available, then the standard _missing field_ error applies.
+When a caller doesn't supply a field value during initialisation and there is no default available then the `E0063` missing field error applies.
 
 ## Order of Precedence
 
