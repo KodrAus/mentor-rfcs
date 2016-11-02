@@ -32,7 +32,7 @@ To work around these shortcomings, users can create constructor functions or mor
 struct Foo {
     a: &'static str,
     b: bool,
-    c: i32
+    c: i32,
 }
 
 impl Foo {
