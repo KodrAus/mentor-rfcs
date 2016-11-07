@@ -36,7 +36,7 @@ struct Foo {
 }
 
 impl Foo {
-    /// Constructor function.
+    // Constructor function.
     fn new(a: &'static str, c: i32) -> Self {
         Foo {
             a: a,
@@ -45,7 +45,7 @@ impl Foo {
         }
     }
 
-    /// Builder method.
+    // Builder method.
     fn b(mut self, b: bool) -> Self {
         self.b = b;
         self
