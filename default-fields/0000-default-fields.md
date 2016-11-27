@@ -242,7 +242,7 @@ let foo = data::Foo {
 
 ## Field Privacy
 
-Default values for fields are opted into by the `struct` definition, rather than the initialiser.
+Default values for fields are opted into by the `struct` definition, rather than the caller initialising the structure. Field privacy doesn't need to be violated to initialise a structure.
 
 # Drawbacks
 [drawbacks]: #drawbacks
