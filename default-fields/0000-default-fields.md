@@ -51,21 +51,30 @@ let foo = Foo::new("Hello", 42);
 
 The problem with a constructor is that you need one for each combination of fields a caller can supply. To work around this, you can use builders, like [`process::Command`](https://doc.rust-lang.org/stable/std/process/struct.Command.html) in the standard library. Builders enable more advanced initialisation, but need additional boilerplate.
 
-This RFC proposes a solution to improve `struct` literal ergonomics so they can be used for `struct`s with private fields and to reduce initialisation boilerplate for simple scenarios. This is achieved by letting callers omit fields from initialisation when a default is specified for that field. This syntax also allows allows fields to be added to `struct`s in a backwards compatible way, by providing defaults for new fields.
+This RFC proposes a solution to improve `struct` literal ergonomics, so they can be used for `struct`s with private fields, and to reduce initialisation boilerplate for simple scenarios. This is achieved by letting callers omit fields from initialisation when a default is specified for that field. This syntax also allows allows fields to be added to `struct`s in a backwards compatible way, by providing defaults for new fields.
 
 Field defaults allow a caller to initialise a `struct` with default values without needing builders or a constructor function:
 
 ```rust
 struct Foo {
-    a: &'static str,
+    a: &'static str = "Hello",
     b: bool = true,
-    c: i32,
+    c: i32 = 42,
 }
 
+// Overriding a single field default
 let foo = Foo {
-    a: "Hello",
-    c: 42,
+    b: false
 };
+
+// Override multiple field defaults
+let foo = Foo {
+    a: "Overriden",
+    c: 1,
+};
+
+// Override no field defaults
+let foo = Foo {};
 ```
 
 # Detailed design
@@ -76,15 +85,15 @@ let foo = Foo {
 In the definition of a `struct`, a default value expression can be optionally supplied for a field:
 
 ```
-struct_field ::= vis ? ident ':' type_path |
-                 vis ? ident ':' type_path '=' expr
+struct_field ::= vis? ident ':' type_path |
+                 vis? ident ':' type_path '=' expr
 ```
 
-The syntax is modeled after constant expressions. Field defaults are only valid for classic C `struct`s, so tuple `struct`s aren't supported.
+The syntax is modeled after constant expressions. Field defaults for tuple structs are not supported.
 
 ## Interpretation
 
-The value of a field default must be a compile-time expression. So any expression that's valid as `const` can be used as a field default. This ensures values that aren't specified by the caller are deterministic and cheap to produce. A type doesn't need to derive `Default` to be valid as a field default.
+The value of a field default must be a compile-time expression. So any expression that's valid as a `const` can be used as a field default. This ensures values that aren't specified by the caller are deterministic and cheap to produce. A type doesn't need to derive `Default` to be valid as a field default.
 
 Valid:
 
@@ -110,7 +119,7 @@ struct Foo {
 
 The above error is based on `E0015` for trying to initialise a constant with a non-constant expression. As the scope of constant expressions changes this message will change too.
 
-Field defaults are shorthand for the 'real' initialiser, where values for missing fields are added with the supplied default expression:
+Field defaults are like a shorthand for the 'real' initialiser, where values for missing fields are added with the supplied default expression:
 
 ```rust
 let foo = Foo {
@@ -128,6 +137,8 @@ let foo = Foo {
     c: 42,
 };
 ```
+
+The mechanism isn't exactly a shorthand because the structure can still be initialised using field defaults even if `b` is private. The caller still can't interact with private fields directly so privacy isn't violated.
 
 When a caller doesn't supply a field value during initialisation and there is no default available then the `E0063` missing field error applies.
 
@@ -228,6 +239,10 @@ let foo = data::Foo {
     c: 42,
 }
 ```
+
+## Field Privacy
+
+Default values for fields are opted into by the `struct` definition, rather than the initialiser.
 
 # Drawbacks
 [drawbacks]: #drawbacks
